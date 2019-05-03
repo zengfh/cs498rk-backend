@@ -88,9 +88,19 @@ tripApp.put('/id/:id', (req,res)=>{
     })
 });
 
+tripApp.delete('/id/:id', (req,res)=>{
+    let refTrip = db.collection('trip').doc(req.params.id);
+
+    let delDoc = refTrip.delete();
+    return res.status(200).json({
+        message: 'Deleted',
+        data: []
+    })
+})
+
+
 
 //UserApp
-
 userApp.post('/', (req, res) =>{
     let newUser = {
         uid: req.body.uid || "",
@@ -153,6 +163,20 @@ userApp.put('/id/:id', (req,res)=>{
         }
     })
 })
+
+
+userApp.delete('/id/:id', (req,res)=>{
+    let refUser = db.collection('user').doc(req.params.id);
+
+    let delDoc = refUser.delete();
+    return res.status(200).json({
+        message: 'Deleted',
+        data: []
+    })
+})
+
+
+
 //Export functions
 exports.trip = functions.https.onRequest(tripApp);
 exports.user = functions.https.onRequest(userApp);

@@ -2,10 +2,11 @@ const functions = require('firebase-functions');
 const admin = require("firebase-admin");
 const express = require('express');
 const cors = require('cors');
-const app = express();
-const app1 = express();
+const tripApp = express();
+const userApp = express();
 // Automatically allow cross-origin requests
-app.use(cors({ origin: true }));
+tripApp.use(cors({ origin: true }));
+userApp.use(cors({ origin: true }));
 
 // Admin initialization
 admin.initializeApp(functions.config().firebase);
@@ -17,33 +18,38 @@ var db = admin.firestore();
 // // https://firebase.google.com/docs/functions/write-firebase-functions
 
 
-
-app.post('/', (req, res) =>{
+const genId = async () =>{
+    let date = new Date();
+    let ts = date.getTime();
+    ts = ts.toString();
+    return ts;
+}
+tripApp.post('/', (req, res) =>{
     let newTrip = {
-        startDate: req.body.startdate || "",
+        startdate: req.body.startdate || "",
         duration: req.body.duration || "",
         owner: req.body.owner || "",
         shared: req.body.shared || [],
         routes: req.body.routes || [],
-    }
-    let refId = "";
-    var setTrip = db.collection('trip').add(newTrip).then(ref=>{
-        console.log('Added document with ID: ', ref.id);
-        refId = ref.id;
-        return ref;
+    };
+
+
+    genId().then(ts =>{
+        db.collection('trip').doc(ts).set(newTrip);
+
+        return res.status(201).json({
+            message: 'Trip added',
+            data: newTrip,
+            tripid: ts,
+        })
     }).catch(err=>{
-        return res.status(500).send({message: 'Server error', data: err});
+        console.log(err);
     })
     
-    return res.status(201).json({
-        message: 'Trip added',
-        id: refId,
-        data: newTrip,
-    })
 })
 
 
-app.get('/id/:id', (req,res)=>{
+tripApp.get('/id/:id', (req,res)=>{
     let retTrip = db.collection('trip').doc(req.params.id);
     let getDoc = retTrip.get()
         .then(doc=>{
@@ -56,15 +62,14 @@ app.get('/id/:id', (req,res)=>{
                 return res.status(200).json({
                     message: 'Trip retrieved',
                     data: doc.data(),
-                    id: doc.id(),
                 });
+
             }
-        }).catch(err=>{
-            return res.status(500).send({message: 'Server error', data: err});
-        });
+        })
 })
 
-app.put('/id/:id', (req,res)=>{
+
+tripApp.put('/id/:id', (req,res)=>{
     let refTrip = db.collection('trip').doc(req.params.id);
     let getDoc = refTrip.get()
     .then(doc=>{
@@ -77,16 +82,37 @@ app.put('/id/:id', (req,res)=>{
             let updateTrip = refTrip.update(req.body);
             return res.status(200).json({
                 message: 'Trip updated',
-                data: [],
+                data: updateTrip,
             })
         }
-    }).catch(err=>{
-        return res.status(500).send({message: 'Server error', data: err});
-    });
+    })
 });
 
 
-app1.get('/id/:id', (req, res)=>{
+//UserApp
+
+userApp.post('/', (req, res) =>{
+    let newUser = {
+        uid: req.body.uid || "",
+        email: req.body.email || "",
+        name: req.body.name || "",
+    }
+    genId().then(ts =>{
+        db.collection('user').doc(ts).set(newUser);
+        return res.status(201).json({
+            message: 'User added',
+            data: newUser,
+            userid: ts,
+        })
+    }).catch(err=>{
+        console.log(err);
+    })
+    
+})
+
+
+
+userApp.get('/id/:id', (req, res)=>{
     let refUser = db.collection('user').doc(req.params.id);
     let getDoc = refUser.get()
     .then(doc=>{
@@ -99,15 +125,17 @@ app1.get('/id/:id', (req, res)=>{
             return res.status(200).json({
                 message: 'User retrieved',
                 data: doc.data(),
-                id: doc.id(),
             });
         }
     }).catch(err=>{
+        console.log(err);
         return res.status(500).send({message: 'Server error', data: err});
     });
 });
 
-app1.put('/id/:id', (req,res)=>{
+
+
+userApp.put('/id/:id', (req,res)=>{
     let refUser = db.collection('user').doc(req.params.id);
     let getDoc = refUser.get()
     .then(doc=>{
@@ -117,16 +145,14 @@ app1.put('/id/:id', (req,res)=>{
                 data: [],
             })
         } else {
-            let updateTrip = refTrip.update(req.body);
+            let updateUser = refUser.update(req.body);
             return res.status(200).json({
                 message: 'User updated',
-                data: [],
+                data: updateUser,
             })
         }
-    }).catch(err=>{
-        return res.status(500).send({message: 'Server error', data: err});
-    });
+    })
 })
 //Export functions
-exports.trip = functions.https.onRequest(app);
-exports.user = functions.https.onRequest(app1);
+exports.trip = functions.https.onRequest(tripApp);
+exports.user = functions.https.onRequest(userApp);

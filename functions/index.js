@@ -194,6 +194,7 @@ userApp.get('/:id', (req, res)=>{
 
 userApp.put('/:id', (req,res)=>{
     let refUser = db.collection('user').doc(req.params.id);
+    let userId = req.params.id;
     let getDoc = refUser.get()
     .then(doc=>{
         if (!doc.exists){
@@ -204,18 +205,67 @@ userApp.put('/:id', (req,res)=>{
         } else {
             let prevTrip = doc.data().trip;
             let newTrip = req.body.trip? JSON.parse(req.body.trip):[];
+            let newUserProfile = req.body;
+            if(newUserProfile.trip) newUserProfile.trip = JSON.parse(newUserProfile.trip);
+
+            console.log(prevTrip);
+            console.log(newTrip);
+
             let tripToDel = [];
             let tripToAdd = [];
             if(newTrip) {
-                tripToDel = prevTrip.filter(x => !newTrip.indexOf(x));
-                triptoAdd = newTrip.filter(x => !prevTrip.indexOf(x));
+                tripToDel = prevTrip.filter(x => !newTrip.includes(x));
+                tripToAdd = newTrip.filter(x => !prevTrip.includes(x));
             }
-            refUser.update(req.body).then(()=>{
+
+            console.log(tripToDel);
+            console.log(tripToAdd);
+
+
+            refUser.update(newUserProfile).then(()=>{
+                tripToDel.forEach((t)=>{
+                    let refTrip = db.collection('trip').doc(t.toString());
+                    refTrip.get().then(doc1=>{
+                        if(!doc1.exists) return null;
+                        let shared = doc1.data().shared;
+                        let idx = shared.indexOf(userId);
+                        if(idx!==-1) shared.splice(idx, 1);
+        
+                        let owner = doc1.data().owner;
+                        if(Number(owner) === Number(userId)) owner = 'undefined';
+                        
+                        refTrip.update({
+                            shared: shared,
+                            owner: owner,
+                        });
+                        return null;
+                    }).catch(err=>console.log(err));
+                });
+                return null;
+            })
+            .then(()=>{
+                tripToAdd.forEach((t)=>{
+                    let refTrip = db.collection('trip').doc(t.toString());
+                    refTrip.get().then(doc1=>{
+                        if(!doc1.exists) return null;
+                        let shared = doc1.data().shared;
+                        let idx = shared.indexOf(userId);
+                        if(idx===-1) shared.push(userId);
+                        refTrip.update({
+                            shared: shared,
+                        });
+                        return null;
+                    }).catch(err=>console.log(err));
+                });
+                return null;
+            })
+            .then(()=>{
                 return res.status(400).json({
                     message: 'User Updated',
                     data: [],
                 })
-            }).catch(err=>console.log(err));
+            })
+            .catch(err=>console.log(err));
             return null;
         }
     }).catch(err=>console.log(err));

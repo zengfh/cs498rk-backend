@@ -49,7 +49,7 @@ tripApp.post('/', (req, res) =>{
 })
 
 
-tripApp.get('/id/:id', (req,res)=>{
+tripApp.get('/:id', (req,res)=>{
     let retTrip = db.collection('trip').doc(req.params.id);
     let getDoc = retTrip.get()
         .then(doc=>{
@@ -69,7 +69,7 @@ tripApp.get('/id/:id', (req,res)=>{
 })
 
 
-tripApp.put('/id/:id', (req,res)=>{
+tripApp.put('/:id', (req,res)=>{
     let refTrip = db.collection('trip').doc(req.params.id);
     let getDoc = refTrip.get()
     .then(doc=>{
@@ -88,7 +88,7 @@ tripApp.put('/id/:id', (req,res)=>{
     })
 });
 
-tripApp.delete('/id/:id', (req,res)=>{
+tripApp.delete('/:id', (req,res)=>{
     let refTrip = db.collection('trip').doc(req.params.id);
 
     let delDoc = refTrip.delete();
@@ -122,7 +122,7 @@ userApp.post('/', (req, res) =>{
 
 
 
-userApp.get('/id/:id', (req, res)=>{
+userApp.get('/:id', (req, res)=>{
     let refUser = db.collection('user').doc(req.params.id);
     let getDoc = refUser.get()
     .then(doc=>{
@@ -145,7 +145,7 @@ userApp.get('/id/:id', (req, res)=>{
 
 
 
-userApp.put('/id/:id', (req,res)=>{
+userApp.put('/:id', (req,res)=>{
     let refUser = db.collection('user').doc(req.params.id);
     let getDoc = refUser.get()
     .then(doc=>{
@@ -165,7 +165,7 @@ userApp.put('/id/:id', (req,res)=>{
 })
 
 
-userApp.delete('/id/:id', (req,res)=>{
+userApp.delete('/:id', (req,res)=>{
     let refUser = db.collection('user').doc(req.params.id);
 
     let delDoc = refUser.delete();

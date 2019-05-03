@@ -120,7 +120,7 @@ tripApp.delete('/:id', (req,res)=>{
     return res.status(200).json({
         message: 'Deleted',
         data: []
-    })
+    });
 })
 
 
@@ -224,7 +224,7 @@ userApp.put('/:id', (req,res)=>{
 
 userApp.delete('/:id', (req,res)=>{
     let refUser = db.collection('user').doc(req.params.id);
-
+    let userId = req.params.id;
     refUser.get().then(doc=>{
         if(!doc.exists){
             return res.status(404).json({
@@ -232,33 +232,39 @@ userApp.delete('/:id', (req,res)=>{
                 data: [],
             });
         }
-
         let tripToDel = doc.data().trip;
+        console.log('TripToDel');
+        console.log(tripToDel);
+        console.log(typeof tripToDel);
         return tripToDel;
     })
     .then((tripToDel)=>{
+        console.log(tripToDel);
         tripToDel.forEach((t)=>{
             let refTrip = db.collection('trip').doc(t.toString());
-            refTrip.get().then(doc=>{
-                
-                let shared = doc.data().shared;
-                let idx = shared.indexOf(t);
+            refTrip.get().then(doc1=>{
+                if(!doc1.exists) return null;
+                let shared = doc1.data().shared;
+                let idx = shared.indexOf(userId);
                 if(idx!==-1) shared.splice(idx, 1);
 
-                let owned = doc.data().owned;
-                if(Number(owner) === Number(t)) owned = 'undefined';
+                let owner = doc1.data().owner;
+                if(Number(owner) === Number(userId)) owner = 'undefined';
                 
                 refTrip.update({
                     shared: shared,
-                    owned: owned,
+                    owner: owner,
                 });
-                return res.status(200).json({
-                    message: 'Deleted',
-                    data: []
-                });
+                return null;
             }).catch(err=>console.log(err));
         });
         return null;
+    }).then(()=>{
+        refUser.delete();
+        return res.status(200).json({
+            message: 'Deleted',
+            data: []
+        })
     }).catch(err=>console.log(err));
 
 })

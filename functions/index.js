@@ -49,6 +49,8 @@ tripApp.get('/', (req,res)=>{
             })
         }).catch(err=>{console.log(err)});
 })
+
+
 tripApp.post('/', (req, res) =>{
     let newTrip = {
         startdate: req.body.startdate || "",
@@ -112,6 +114,7 @@ tripApp.put('/:id', (req,res)=>{
         }
     })
 });
+
 
 tripApp.delete('/:id', (req,res)=>{
     let refTrip = db.collection('trip').doc(req.params.id);
@@ -190,7 +193,43 @@ userApp.get('/:id', (req, res)=>{
     });
 });
 
-
+userApp.get('/gettrip/:id', (req,res)=>{
+    let refUser = db.collection('user').doc(req.params.id);
+    let retData= [];
+    refUser.get().then(doc=>{
+        if (!doc.exists){
+            return res.status(404).json({
+                message: 'User not found',
+                data: [],
+            })
+        }
+        return doc.data().trip;
+    }).then((trips)=>{
+        let results = [];
+        trips.forEach(t=>{
+            let refTrip = db.collection('trip').doc(t.toString());
+            results.push(refTrip.get());
+            // refTrip.get().then(doc1=>{
+            //     if(!doc1.exists) return null;
+            //     retData.push(doc1.data());
+            //     results.push(doc1.data());
+            //     console.log(retData);
+            //     return null;
+            // }).catch(err=>console.log(err));
+        })
+        return Promise.all(results);
+    }).then(results=>{
+        for(let r of results){
+            console.log(r);
+        }
+        return null;
+    }).then(()=>{
+        return res.status(200).json({
+            message: 'Get trips by user',
+            data: results,
+        })
+    }).catch(err=>console.log(err));
+})
 
 userApp.put('/:id', (req,res)=>{
     let refUser = db.collection('user').doc(req.params.id);

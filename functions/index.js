@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require("firebase-admin");
+const core = require("firebase/app");
 const express = require('express');
 const cors = require('cors');
 const tripApp = express();
@@ -52,18 +53,32 @@ tripApp.get('/', (req,res)=>{
 
 
 tripApp.post('/', (req, res) =>{
+    let tripObj = JSON.parse(req.body.data)
     let newTrip = {
-        startdate: req.body.startdate || "",
-        duration: req.body.duration || "",
-        owner: req.body.owner || "",
-        shared: req.body.shared || [],
-        routes: req.body.routes || [],
+        startDate: tripObj.startDate || "",
+        duration: tripObj.duration || "",
+        owner: tripObj.owner || "",
+        shared: tripObj.shared || [],
+        routes: tripObj.routes || [],
+        city: tripObj.city || null,
+        description: tripObj.description || "",
+        name: tripObj.name || "",  
     };
 
 
-    genId().then(ts =>{
+    genId().then(ts => {
+        newTrip.id = ts;
         db.collection('trip').doc(ts).set(newTrip);
-        
+        let userRef = db.collection('user').doc(newTrip.owner);
+        console.log(newTrip.owner)
+        userRef.get().then(function(doc) {
+            console.log("doc is ", doc.exists)
+            if(doc.exists){
+                console.log("user exist!")
+                userRef.update( {trip: [...doc.data().trip, ts] })
+            }
+        })
+       
         return res.status(201).json({
             message: 'Trip added',
             data: newTrip,
@@ -106,7 +121,8 @@ tripApp.put('/:id', (req,res)=>{
                 data: [],
             })
         } else {
-            let updateTrip = refTrip.update(req.body);
+            let updatedTrip = JSON.parse(req.body.data)
+            let updateTrip = refTrip.update(updatedTrip);
             return res.status(200).json({
                 message: 'Trip updated',
                 data: updateTrip,
@@ -126,6 +142,27 @@ tripApp.delete('/:id', (req,res)=>{
     });
 })
 
+tripApp.get('/shared/:id', (req, res) => {
+    let userId = req.params.id;
+    db.collection("trip")
+        .get()
+        .then(function(querySnapshot) {
+            let trips = []
+            querySnapshot.forEach(function(doc) {
+                trip = doc.data();
+                if(trip.shared.includes(userId)){
+                    trips.push(trip)
+                }
+            });
+            return res.status(200).json({
+                message: "Successfully get shared",
+                data: trips
+            })
+    })
+    .catch(function(error) {
+        console.log("Error getting documents: ", error);
+    });
+})
 
 
 //UserApp
@@ -140,7 +177,7 @@ userApp.post('/', (req, res) =>{
         trip: nt,
     }
     genId().then(ts =>{
-        db.collection('user').doc(ts).set(newUser);
+        db.collection('user').doc(newUser.email).set(newUser);
         return ts;
     }).then((ts1)=>{
         if(newUser.trip && newUser.trip.length > 0){
@@ -360,6 +397,29 @@ userApp.delete('/:id', (req,res)=>{
         })
     }).catch(err=>console.log(err));
 
+})
+
+userApp.get("/", (req, res) => {
+    db.collection("user")
+    .get()
+    .then(function(querySnapshot) {
+        let users = []
+        querySnapshot.forEach(function(doc) {
+            user = doc.data();
+            console.log(user.name)
+            users.push({
+                name: user.name,
+                email: user.email
+            })
+        });
+        return res.status(200).json({
+            message: "Successfully get",
+            data: users
+        })
+    })
+    .catch(function(error) {
+        console.log("Error getting documents: ", error);
+    });
 })
 
 

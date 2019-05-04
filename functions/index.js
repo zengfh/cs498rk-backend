@@ -63,7 +63,7 @@ tripApp.post('/', (req, res) =>{
 
     genId().then(ts =>{
         db.collection('trip').doc(ts).set(newTrip);
-
+        
         return res.status(201).json({
             message: 'Trip added',
             data: newTrip,
@@ -219,14 +219,18 @@ userApp.get('/gettrip/:id', (req,res)=>{
         })
         return Promise.all(results);
     }).then(results=>{
+        let reData = []
         for(let r of results){
-            console.log(r);
+            if(r.exists) {
+                console.log(r.data());
+                reData.push(r.data());
+            }
         }
-        return null;
-    }).then(()=>{
+        return reData;
+    }).then((reData)=>{
         return res.status(200).json({
             message: 'Get trips by user',
-            data: results,
+            data: reData,
         })
     }).catch(err=>console.log(err));
 })

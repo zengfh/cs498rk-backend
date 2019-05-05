@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require("firebase-admin");
-const core = require("firebase/app");
+//const core = require("firebase/app");
 const express = require('express');
 const cors = require('cors');
 const tripApp = express();
@@ -128,7 +128,7 @@ tripApp.post('/', (req, res) =>{
         return res.status(201).json({
             message: 'trip added',
             data: newTrip,
-            id: ts2,
+            id: ts,
         });
     }).catch(err=>{
         console.log(err);

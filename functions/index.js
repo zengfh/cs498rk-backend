@@ -76,7 +76,8 @@ tripApp.post('/', (req, res) =>{
                 console.log("user exist!")
                 userRef.update( {trip: [...doc.data().trip, ts] })
             }
-        })
+            return null;
+        }).catch(err=>console.log(err));
        
 //     console.log(req.body.shared);
 //     console.log(typeof req.body.shared);

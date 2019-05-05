@@ -267,11 +267,9 @@ userApp.post('/', (req, res) =>{
     }
     genId().then(ts =>{
         db.collection('user').doc(newUser.email).set(newUser);
-
-        return ts;
+        return newUser.email;
     }).then((ts1)=>{
         if(newUser.trip && newUser.trip.length > 0){
-
             newUser.trip.forEach((t)=>{
                 let refTrip = db.collection('trip').doc(t.toString());
                 refTrip.get().then(doc=>{
